@@ -39,16 +39,22 @@ temporaryFiles)
 # Fill dataframe with data
 df <- lapply(temporaryFiles, function(temporaryFile) {
     rawCarAnalyticData <- yaml::read_yaml(temporaryFile)
+    #print(rawCarAnalyticData)
     carAnalyticDataFrame <- data.frame(
         id = rawCarAnalyticData$id,
         title = rawCarAnalyticData$title,
         description = rawCarAnalyticData$description,
         submission_date = rawCarAnalyticData$submission_date,
-        information_domain = strsplit(rawCarAnalyticData$information_domain, ",|\\s+-\\s+")[[1]][1]
+        information_domain = paste(factor(strsplit(rawCarAnalyticData$information_domain, ", |\\s+-\\s+")[[1]], levels = c("Analytic", "External", "Host", "Network")), collapse = "/"),
+        platforms = paste(rawCarAnalyticData$platforms, collapse="/"),
+        subtypes = paste(rawCarAnalyticData$subtypes, collapse="/"),
+        analytic_types = paste(rawCarAnalyticData$analytic_types, collapse="/")
     )
+    #print(rawCarAnalyticData$id)
+    #print(paste(strsplit(rawCarAnalyticData$information_domain, ", |\\s+-\\s+")[[1]], collapse = "/"))
+    #print(rawCarAnalyticData$platforms)
+    #print(paste(factor(strsplit(rawCarAnalyticData$information_domain, ", |\\s+-\\s+")[[1]], levels = c("Analytic", "External", "Host", "Network")), collapse = "/"))
 })
 df <- do.call(rbind, df)
 df$submission_date <- as.Date(df$submission_date)
-df$information_domain <- factor(df$information_domain,
-                                levels = c("Analytic", "External", "Host",
-                                           "Network", "Other"))
+#df$information_domain <- factor(df$information_domain, levels = c("Analytic", "External", "Host", "Network", "Other"))
