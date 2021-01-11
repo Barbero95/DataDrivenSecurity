@@ -36,25 +36,44 @@ mapply(function(carAnalyticsFileUrl,
 carAnalyticsFileUrlList,
 temporaryFiles)
 
-# Fill dataframe with data
+# -------------Parte importante donde generamos dos datasets--------------
+
+# Primer dataframe que generamos
 df <- lapply(temporaryFiles, function(temporaryFile) {
     rawCarAnalyticData <- yaml::read_yaml(temporaryFile)
-    #print(rawCarAnalyticData)
+
     carAnalyticDataFrame <- data.frame(
         id = rawCarAnalyticData$id,
         title = rawCarAnalyticData$title,
         description = rawCarAnalyticData$description,
         submission_date = rawCarAnalyticData$submission_date,
-        information_domain = paste(factor(strsplit(rawCarAnalyticData$information_domain, ", |\\s+-\\s+")[[1]], levels = c("Analytic", "External", "Host", "Network")), collapse = "/"),
+        information_domain = factor(strsplit(rawCarAnalyticData$information_domain, ", |\\s+-\\s+")[[1]], levels = c("Analytic", "External", "Host", "Network")),
         platforms = paste(rawCarAnalyticData$platforms, collapse="/"),
         subtypes = paste(rawCarAnalyticData$subtypes, collapse="/"),
-        analytic_types = paste(rawCarAnalyticData$analytic_types, collapse="/")
+        analytic_types = paste(rawCarAnalyticData$analytic_types, collapse="/"),
+        coverage = paste(rawCarAnalyticData$coverage, collapse="/")
     )
-    #print(rawCarAnalyticData$id)
-    #print(paste(strsplit(rawCarAnalyticData$information_domain, ", |\\s+-\\s+")[[1]], collapse = "/"))
-    #print(rawCarAnalyticData$platforms)
-    #print(paste(factor(strsplit(rawCarAnalyticData$information_domain, ", |\\s+-\\s+")[[1]], levels = c("Analytic", "External", "Host", "Network")), collapse = "/"))
+    carAnalyticDataFrame
 })
 df <- do.call(rbind, df)
 df$submission_date <- as.Date(df$submission_date)
-#df$information_domain <- factor(df$information_domain, levels = c("Analytic", "External", "Host", "Network", "Other"))
+
+# Segundo dataframe que generamos, este incluye los coverage de todos los ficheros.
+dfCoverage <- plyr::ldply(temporaryFiles, function(temporaryFile) {
+  rawCarAnalyticData <- yaml::read_yaml(temporaryFile)
+  k <- plyr::ldply(1:length(rawCarAnalyticData$coverage), function(index) {
+    technique <- rawCarAnalyticData$coverage[[index]]$technique
+    tactics <- paste(rawCarAnalyticData$coverage[[index]]$tactics, collapse="/")
+    coverage <- rawCarAnalyticData$coverage[[index]]$coverage
+    subtechniques <- paste(rawCarAnalyticData$coverage[[index]]$subtechniques, collapse="/")
+    temp <- data.frame(
+      id = rawCarAnalyticData$id,
+      tecnique = ifelse(test = !is.null(technique), yes = technique, no = "-"),
+      tactics = ifelse(test = !is.null(tactics), yes = tactics, no = "-"),
+      coverage = ifelse(test = !is.null(coverage), yes = coverage, no = "-"),
+      subtechniques = ifelse(test = !is.null(subtechniques), yes = subtechniques, no = "-")
+    )
+    temp
+  })
+  k
+})
